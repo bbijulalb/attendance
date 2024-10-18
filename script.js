@@ -2,7 +2,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const fileUpload = document.getElementById('fileUpload');
     const attendanceTable = document.getElementById('attendanceTable').getElementsByTagName('tbody')[0];
     const attendanceDate = document.getElementById('attendanceDate');
-    const generatePDFButton = document.getElementById('generatePDF');
+    const generateAbsentPDFButton = document.getElementById('generateAbsentPDF');
+    const generatePresentPDFButton = document.getElementById('generatePresentPDF');
 
     // Set the date input to today's date
     const currentDate = new Date();
@@ -54,8 +55,18 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Generate PDF report with table format
-    generatePDFButton.addEventListener('click', () => {
+    // Generate PDF report with only "Absent" students
+    generateAbsentPDFButton.addEventListener('click', () => {
+        generatePDFReport("Absent");
+    });
+
+    // Generate PDF report with only "Present" students
+    generatePresentPDFButton.addEventListener('click', () => {
+        generatePDFReport("Present");
+    });
+
+    // Function to generate a PDF report based on the status filter
+    function generatePDFReport(statusFilter) {
         const { jsPDF } = window.jspdf;
         const pdf = new jsPDF();
         const date = new Date(attendanceDate.value).toLocaleDateString();
@@ -64,19 +75,26 @@ document.addEventListener('DOMContentLoaded', () => {
         // Add heading and date/time in bold
         pdf.setFontSize(16);
         pdf.setFont("helvetica", "bold");
-        pdf.text("Computer Application", 10, 20);
+        pdf.text("SVM MODEL HIGHER SECONDARY SCHOOL", 10, 20);
         pdf.setFontSize(12);
         pdf.text(`Date: ${date}`, 10, 30);
         pdf.text(`Time: ${time}`, 150, 30, { align: "right" });
 
-        // Prepare table data
+        // Prepare table data based on the status filter (Present/Absent)
         const tableData = [];
         const radioButtons = document.querySelectorAll('.attendance-radio:checked');
         radioButtons.forEach((radio, index) => {
             const studentName = radio.getAttribute('data-student');
             const status = radio.value;
-            tableData.push([index + 1, studentName, status]);
+            if (status === statusFilter) {
+                tableData.push([index + 1, studentName, status]);
+            }
         });
+
+        if (tableData.length === 0) {
+            alert(`No students marked as ${statusFilter}.`);
+            return;
+        }
 
         // Add table to PDF using autoTable
         pdf.autoTable({
@@ -89,6 +107,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         // Save the PDF
-        pdf.save(`Attendance_Report_${date.replace(/\//g, '-')}.pdf`);
-    });
+        pdf.save(`${statusFilter}_Students_Report_${date.replace(/\//g, '-')}.pdf`);
+    }
 });
